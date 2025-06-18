@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>About Me & Flappy Bird</title>
+  <style>
+    body {
+      margin: 0;
+      background: #aee4ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+    #container {
+      position: relative;
+      background: white;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      text-align: center;
+      max-width: 90%;
+    }
+    #container h1 {
+      margin-bottom: 20px;
+      font-size: 2em;
+      background: linear-gradient(to right, #0c0c0c, #0c0c0c);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+    #content {
+      margin-bottom: 40px;
+    }
+    #buttons {
+      display: flex;
+      justify-content: space-between;
+    }
+    .btn-section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .btn-section.right {
+      align-items: flex-end;
+    }
+    .btn-section p {
+      margin: 0 0 5px 0;
+      font-size: 0.85em;
+      color: #444;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      background: #7873f5;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    canvas {
+      border: 2px solid rgb(12, 12, 12);
+      display: none;
+      background: hsl(180, 14%, 99%);
+    }
+    .hobby {
+      text-align: left;
+      margin: 10px 0;
+    }
+    .hobby ul {
+      padding-left: 20px;
+    }
+    .hobby img {
+      max-width: 100px;
+      margin: 10px;
+    }
+    .image-gallery {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>Welcome!</h1>
+    <div id="content">
+  <!-- Dynamic content will be inserted here by JS -->
+</div>
+
+    <div id="buttons">
+      <div class="btn-section">
+        <button onclick="cycleContent()">Change Content</button>
+      </div>
+      <div class="btn-section right">
+        <p>Do you wish to play and feel relaxed?</p>
+        <button onclick="startGame()">Click here to play</button>
+      </div>
+    </div>
+  </div>
+  <canvas id="gameCanvas" width="320" height="480"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('container');
+    const content = document.getElementById('content');
+
+    const contentText = document.getElementById("content");
+const contentImages = document.createElement("div");
+contentImages.className = "image-gallery";
+contentText.appendChild(contentImages);
+
+const contents = [
+  {
+    text: `<p>Hello! I'm Jyotirmoy Jana, a developer who loves creating interactive web content. 😊</p>
+           <p>I enjoy coding, gaming, and learning new technologies!</p>
+           <div class='hobby'>
+             <strong>Hobbies:</strong>
+             <ul><li>Game Development</li><li>Chess</li><li>UI Design</li></ul>
+           </div>`,
+    images: ["https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRcNT01NqxHrtyTMSdqTFnAEiL19UkFXckd6Q&s", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXfwwrCyo0eRK_GgTREUxm-pnCGzFLmN88xA&s"]
+  },
+  {
+    text: `<p>I also love puzzles and design challenges.</p>
+           <p>Solving problems creatively is what drives my work.</p>
+           <div class='hobby'>
+             <strong>Hobbies:</strong>
+             <ul><li>Puzzle Solving</li><li>Minimalist Design</li></ul>
+           </div>`,
+    images: ["https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLqqsXt1gtZ9_-xpTkadA9B3WCvEZEj6kBBw&s", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQwthd_8QZ7qmTy_qRBMd4GlAP5ytA8FklWtw&s"]
+  },
+  {
+    text: `<p>When I'm not coding, you’ll find me playing chess or experimenting with game design!</p>
+           <p>Let’s build something cool together!</p>
+           <div class='hobby'>
+             <strong>Hobbies:</strong>
+             <ul><li>Strategy Games</li><li>Animation</li></ul>
+           </div>`,
+    images: ["https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5mSLpGEAq_ORZPxcs2KQzAKwuPjzJq_JiSQ&s", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRE-ShKlz5c3g_p69FA9PVgVKzfs8JcivD_aQ&s"]
+  }
+];
+
+let contentIndex = 0;
+
+function cycleContent() {
+  const { text, images } = contents[contentIndex];
+  contentText.innerHTML = text;
+  contentText.appendChild(contentImages);
+
+  contentImages.innerHTML = ''; // Clear previous images
+  images.forEach(src => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = 'Content image';
+    img.style.maxWidth = '100px';
+    img.style.margin = '10px';
+    contentImages.appendChild(img);
+  });
+
+  contentIndex = (contentIndex + 1) % contents.length;
+}
+
+    let bird, pipes, gravity, score, gameRunning, frameCount;
+    const clouds = [];
+
+    function startGame() {
+      container.style.display = 'none';
+      canvas.style.display = 'block';
+      initGame();
+      document.addEventListener("keydown", e => {
+        if (e.code === "Space") flap();
+      });
+      document.addEventListener("click", flap);
+      gameLoop();
+    }
+
+    function drawBackground() {
+      ctx.fillStyle = "#aee4ff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      clouds.forEach(cloud => {
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        ctx.arc(cloud.x, cloud.y, cloud.r, 0, Math.PI * 2);
+        ctx.fill();
+        cloud.x -= 0.3;
+        if (cloud.x + cloud.r < 0) {
+          cloud.x = canvas.width + Math.random() * 100;
+          cloud.y = Math.random() * 100 + 20;
+        }
+      });
+    }
+
+    function initGame() {
+      bird = { x: 50, y: 150, width: 34, height: 24, velocity: 0 };
+      pipes = [];
+      gravity = 0.4;
+      score = 0;
+      frameCount = 0;
+      gameRunning = true;
+      clouds.length = 0;
+      for (let i = 0; i < 5; i++) {
+        clouds.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * 100 + 20,
+          r: Math.random() * 25 + 15
+        });
+      }
+    }
+
+    function drawBird() {
+      const { x, y, width, height } = bird;
+      ctx.fillStyle = "yellow";
+      ctx.beginPath();
+      ctx.ellipse(x + width / 2, y + height / 2, width / 2, height / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.arc(x + width * 0.65, y + height * 0.3, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "black";
+      ctx.beginPath();
+      ctx.arc(x + width * 0.65, y + height * 0.3, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "orange";
+      ctx.beginPath();
+      ctx.moveTo(x + width * 0.9, y + height * 0.5);
+      ctx.lineTo(x + width, y + height * 0.45);
+      ctx.lineTo(x + width, y + height * 0.55);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "gold";
+      ctx.beginPath();
+      ctx.moveTo(x + width * 0.6, y + height * 0.8);
+      ctx.lineTo(x, y + height * 0.9);
+      ctx.lineTo(x + width * 0.6, y + height * 0.8);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function createPipes() {
+      if (frameCount % 90 === 0) {
+        const gap = 200;
+        const top = Math.floor(Math.random() * 200) + 50;
+        pipes.push({
+          x: canvas.width,
+          width: 40,
+          top,
+          bottom: top + gap,
+          passed: false
+        });
+      }
+    }
+
+    function drawPipes() {
+      pipes.forEach(pipe => {
+        ctx.shadowColor = "rgba(0,0,0,0.2)";
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = "#097A14";
+        ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
+        ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height - pipe.bottom);
+        ctx.shadowBlur = 0;
+      });
+    }
+
+    function updatePipes() {
+      pipes.forEach(pipe => {
+        pipe.x -= 2;
+        if (
+          bird.x < pipe.x + pipe.width &&
+          bird.x + bird.width > pipe.x &&
+          (bird.y < pipe.top || bird.y + bird.height > pipe.bottom)
+        ) {
+          endGame();
+        }
+        if (!pipe.passed && pipe.x + pipe.width < bird.x) {
+          score++;
+          pipe.passed = true;
+        }
+      });
+      pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+    }
+
+    function drawScore() {
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "20px Arial";
+      ctx.fillText("Score: " + score, 10, 30);
+    }
+
+    function updateBird() {
+      bird.velocity += gravity;
+      bird.y += bird.velocity;
+      if (bird.y + bird.height > canvas.height || bird.y < 0) {
+        endGame();
+      }
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+      createPipes();
+      updatePipes();
+      drawPipes();
+      updateBird();
+      drawBird();
+      drawScore();
+      frameCount++;
+      requestAnimationFrame(gameLoop);
+    }
+
+    function flap() {
+      bird.velocity = -5;
+    }
+
+    function endGame() {
+      gameRunning = false;
+      alert(`Game Over! Your score: ${score}`);
+      location.reload();
+    }
+  </script>
+</body>
+</html>
